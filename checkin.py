@@ -5,10 +5,13 @@ import os
 # -------------------------------------------------------------------------------------------
 # github workflows - 飞书机器人推送版本
 # -------------------------------------------------------------------------------------------
-
-def send_feishu_message(title, content):
+def send_feishu_message(webhook_token, title, content):
     """发送消息到飞书机器人"""
-    webhook_url = "https://open.feishu.cn/open-apis/bot/v2/hook/344b9729-cb56-4fef-ae5b-a07b0ce72733"
+    if not webhook_token:
+        print("未设置飞书机器人 webhook token")
+        return 0
+        
+    webhook_url = f"https://open.feishu.cn/open-apis/bot/v2/hook/{webhook_token}"
     
     # 组合完整消息
     full_message = f"{title}\n{content}"
@@ -33,6 +36,9 @@ def send_feishu_message(title, content):
         return 0
 
 if __name__ == '__main__':
+    # 飞书机器人webhook token 申请地址 https://open.feishu.cn/
+    feishu_token = os.environ.get("FEISHU_WEBHOOK_TOKEN", "")
+    
     # 推送内容
     title = "Glados"
     success, fail = 0, 0        # 成功账号数量 失败账号数量
@@ -104,7 +110,6 @@ if __name__ == '__main__':
         
      # --------------------------------------------------------------------------------------------------------#
     print("sendContent:" + "\n", sendContent)
-    
-    # 使用飞书机器人推送替代 pushplus
-    title += f': 成功{success},失败{fail}'
-    send_feishu_message(title, sendContent)
+    if feishu_token != "":
+        title += f': 成功{success},失败{fail}'
+        send_feishu_message(feishu_token, title, sendContent)
