@@ -1,13 +1,38 @@
 import requests
 import json
 import os
-# -------------------------------------------------------------------------------------------
-# github workflows
-# -------------------------------------------------------------------------------------------
-if __name__ == '__main__':
-    # pushplus秘钥 申请地址 http://www.pushplus.plus
-    sckey = os.environ.get("PUSHPLUS", "")
 
+# -------------------------------------------------------------------------------------------
+# github workflows - 飞书机器人推送版本
+# -------------------------------------------------------------------------------------------
+
+def send_feishu_message(title, content):
+    """发送消息到飞书机器人"""
+    webhook_url = "https://open.feishu.cn/open-apis/bot/v2/hook/344b9729-cb56-4fef-ae5b-a07b0ce72733"
+    
+    # 组合完整消息
+    full_message = f"{title}\n{content}"
+    
+    payload = {
+        "msg_type": "text",
+        "content": {
+            "text": full_message
+        }
+    }
+    
+    try:
+        response = requests.post(
+            webhook_url,
+            headers={'Content-Type': 'application/json'},
+            data=json.dumps(payload, ensure_ascii=False).encode('utf-8')
+        )
+        print(f"飞书推送状态码: {response.status_code}")
+        return response.status_code
+    except Exception as e:
+        print(f"飞书推送异常: {str(e)}")
+        return 0
+
+if __name__ == '__main__':
     # 推送内容
     title = "Glados"
     success, fail = 0, 0        # 成功账号数量 失败账号数量
@@ -38,7 +63,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------#
         if checkin.status_code == 200:
             # 解析返回的json数据
-            result = checkin.json()     
+            result = checkin.json()
             # 获取签到结果
             status = result.get('message')
 
@@ -79,8 +104,7 @@ if __name__ == '__main__':
         
      # --------------------------------------------------------------------------------------------------------#
     print("sendContent:" + "\n", sendContent)
-    if sckey != "":
-        title += f': 成功{success},失败{fail}'
-        plusurl = f"http://www.pushplus.plus/send?token={sckey}&title={title}&content={sendContent}"
-        r = requests.get(plusurl)
-        print(r.status_code)
+    
+    # 使用飞书机器人推送替代 pushplus
+    title += f': 成功{success},失败{fail}'
+    send_feishu_message(title, sendContent)
