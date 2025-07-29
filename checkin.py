@@ -43,12 +43,11 @@ if __name__ == '__main__':
         exit(0)
     
     # 推送内容
-    title = "Glados"
     success, fail = 0, 0        # 成功账号数量 失败账号数量
     sendContent = ""
 
     # glados账号cookie 直接使用数组 如果使用环境变量需要字符串分割一下
-    cookies = os.environ.get("COOKIES", []).split("&")
+    cookies = os.environ.get("COOKIES", "").split("&")
     if cookies[0] == "":
         print('未获取到COOKIE变量')
         cookies = []
@@ -72,26 +71,42 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------#
         if checkin.status_code == 200:
             # 解析返回的json数据
-            result = checkin.json()
+            checkin_result = checkin.json()
             # 获取签到结果
-            status = result.get('message')
-
+            status = checkin_result.get('message', '')
+            
             # 获取账号当前状态
-            result = state.json()
-            print(result)
+            state_result = state.json()
+            print(state_result)
+            
             # 获取剩余时间
-            leftdays = int(float(result['data']['leftDays']))
+            leftdays = int(float(state_result['data']['leftDays']))
             # 获取账号email
-            email = result['data']['email']
+            email = state_result['data']['email']
+            
+            # 解析签到详情
+            points_earned = "0"
+            current_balance = "0"
+            
+            if checkin_result.get('list') and len(checkin_result['list']) > 0:
+                latest_record = checkin_result['list'][0]
+                points_earned = latest_record.get('change', '0')
+                current_balance = latest_record.get('balance', '0')
+                # 格式化积分显示
+                points_earned = f"{float(points_earned):.0f}"
+                current_balance = f"{float(current_balance):.0f}"
 
             if "Checkin" in status:
                 success += 1
-                message_status = "签到成功"
-            elif "Tomorrow" in status:
-                message_status = "今日已签到"
+                message_status = "✅ 签到成功"
+                status_emoji = "🎉"
+            elif "Tomorrow" in status or "Repeats" in status:
+                message_status = "⏰ 今日已签到"
+                status_emoji = "✨"
             else:
                 fail += 1
-                message_status = "签到失败，请检查..."
+                message_status = "❌ 签到失败"
+                status_emoji = "⚠️"
 
             if leftdays is not None:
                 message_days = f"{leftdays} 天"
@@ -99,20 +114,30 @@ if __name__ == '__main__':
                 message_days = "无法获取剩余天数信息"
         else:
             email = ""
-            message_status = "签到请求url失败, 请检查..."
+            message_status = "❌ 签到请求失败"
             message_days = "获取信息失败"
+            points_earned = "0"
+            current_balance = "0"
+            status_emoji = "⚠️"
+            fail += 1
 
-        # 推送内容
-        sendContent += f"{'-'*30}\n\
-            账号: {email}\n\
-            签到情况: {message_status}\n\
-            剩余天数: {message_days}\n"
-        
-        if cookie == cookies[-1]:
-            sendContent += '-' * 30
+        # 推送内容 - 美化格式
+        sendContent += f"""
+{status_emoji} 账号信息
+📧 邮箱: {email}
+🎯 状态: {message_status}
+💰 本次获得: +{points_earned} 积分
+💎 当前余额: {current_balance} 积分
+⏳ 剩余天数: {message_days}
+"""
         
      # --------------------------------------------------------------------------------------------------------#
     print("sendContent:" + "\n", sendContent)
     if feishu_token != "":
-        title += f': 成功{success},失败{fail}'
+        # 根据签到结果设置标题
+        if fail == 0:
+            title = "**✅ Glados 签到成功**\n\n"
+        else:
+            title = "**❌ Glados 签到失败**\n\n"
+        
         send_feishu_message(feishu_token, title, sendContent)
