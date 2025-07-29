@@ -38,6 +38,9 @@ def send_feishu_message(webhook_token, title, content):
 if __name__ == '__main__':
     # 飞书机器人webhook token 申请地址 https://open.feishu.cn/
     feishu_token = os.environ.get("FEISHU_WEBHOOK_TOKEN", "")
+    if feishu_token == ""
+        print('未获取到飞书 token 变量')
+        exit(0)
     
     # 推送内容
     title = "Glados"
