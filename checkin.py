@@ -136,8 +136,8 @@ if __name__ == '__main__':
     if feishu_token != "":
         # 根据签到结果设置标题
         if fail == 0:
-            title = "**✅ Glados 签到成功**\n\n"
+            title = "✅ Glados 签到成功\n\n"
         else:
-            title = "**❌ Glados 签到失败**\n\n"
+            title = "❌ Glados 签到失败\n\n"
         
         send_feishu_message(feishu_token, title, sendContent)
